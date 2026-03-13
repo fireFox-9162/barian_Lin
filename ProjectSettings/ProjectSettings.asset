@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 22
+  productGUID: 12345678901234567890123456789012
+  AndroidProfiler: 0
+  AndroidFilterTouchesWhenObscured: 0
+  AndroidEnableSustainedPerformanceMode: 0
+  defaultScreenWidth: 1280
+  defaultScreenHeight: 720
+  defaultScreenWidthWeb: 960
+  defaultScreenHeightWeb: 600
+  m_StereoRenderingPath: 0
+  m_ActiveColorSpace: 0
+  companyName: DefaultCompany
+  productName: barian_Lin
+  defaultCursor: {fileID: 0}
+  cursorHotspot: {x: 0, y: 0}
+  m_BuildTargetBatching:
+  - m_BuildTarget: Standalone
+    m_Batching: 1
+  m_BuildTargetGraphicsAPIs: []
+  m_BuildTargetVRSettings: []
+  openGLRequireES31: 0
+  openGLRequireES31AEP: 0
+  openGLRequireES32: 0
+  m_TemplateCustomTags: {}
+  mobileMTRendering:
+    Android: 1
+    iPhone: 1
+    tvOS: 1
+  m_BuildTargetGroup: {}
+  useHDRDisplay: 0
+  hdrBitDepth: 0
+  m_ColorGamuts:
+  - 0
+  targetPixelDensity: 30
+  resolutionScalingMode: 0
+  resetResolutionOnWindowResize: 0
+  androidSupportedAspectRatio: 1
+  androidMaxAspectRatio: 2.1
+  applicationIdentifier:
+    Standalone: com.DefaultCompany.barian_Lin
+    Android: com.DefaultCompany.barian_Lin
+    iPhone: com.DefaultCompany.barian_Lin
+  buildNumber:
+    Standalone: 0
+    iPhone: 0
+    tvOS: 0
+  overrideDefaultApplicationIdentifier: 0
+  AndroidBundleVersionCode: 1
+  AndroidMinSdkVersion: 22
+  AndroidTargetSdkVersion: 33
+  AndroidExportProGuardMapping: 0
+  androidShrinkingMode: 0
+  androidRecordingInputPath: 
+  androidMaxRecordedInputFileSize: 100
+  stripEngineCode: 1
+  iPhoneStrippingLevel: 0
+  iPhoneScriptCallOptimization: 0
+  ForceInternetPermission: 0
+  ForceSDCardPermission: 0
+  CreateWallpaper: 0
+  APKExpansionFiles: 0
+  keepLoadedShadersAlive: 0
+  StripUnusedMeshComponents: 1
+  VertexChannelCompressionMask: 4054
+  iPhoneSdkVersion: 988
+  iOSTargetOSVersionString: 12.0
+  tvOSSdkVersion: 0
+  tvOSRequireExtendedGameController: 0
+  tvOSTargetOSVersionString: 12.0
+  uIPrerenderedIcon: 0
+  uIRequiresPersistentWiFi: 0
+  uIRequiresFullScreen: 1
+  uIStatusBarHidden: 1
+  uIExitOnSuspend: 0
+  uIStatusBarStyle: 0
+  appleTVSplashImage: {fileID: 0}
+  virtualRealitySplashScreen: {fileID: 0}
+  HoloLensTrackingSpaceSetting: 0
+  defaultScreenOrientation: 4
+  targetDevice: 2
+  useOnDemandResources: 0
+  accelerometerFrequency: 60
+  companyName: DefaultCompany
+  productName: barian_Lin
+  defaultCursor: {fileID: 0}
+  cursorHotspot: {x: 0, y: 0}
+  m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
+  m_ShowUnitySplashScreen: 1
+  m_ShowUnitySplashLogo: 1
+  m_SplashScreenOverlayOpacity: 1
+  m_SplashScreenAnimation: 1
+  m_SplashScreenLogoStyle: 1
+  m_SplashScreenDrawMode: 0
+  m_SplashScreenBackgroundAnimationZoom: 1
+  m_SplashScreenLogoAnimationZoom: 1
+  m_SplashScreenBackgroundLandscapeAspect: 1
+  m_SplashScreenBackgroundPortraitAspect: 1
+  m_SplashScreenBackgroundLandscapeUvs:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  m_SplashScreenBackgroundPortraitUvs:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  m_SplashScreenLogos: []
+  m_VirtualRealitySplashScreen: {fileID: 0}
+  m_HolographicTrackingLossScreen: {fileID: 0}
+  defaultScreenWidth: 1280
+  defaultScreenHeight: 720
