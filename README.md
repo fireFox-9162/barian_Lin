@@ -1,165 +1,130 @@
-# barian_Lin — Unity Warrior Sprite Animation Project
+# barian_Lin — Warrior Sprite Animation System
 
-## 프로젝트 개요
-이 프로젝트는 픽셀 아트 전사 캐릭터(Warrior)를 위한 Unity 2D 스프라이트 애니메이션 시스템입니다.
-
----
-
-## 📁 폴더 구조
-```
-barian_Lin/                          (Unity 프로젝트 루트)
-├── Assets/
-│   ├── Sprites/
-│   │   └── Warrior/                 ← 스프라이트 시트 PNG 파일
-│   │       ├── warrior_walk_right.png       (8 프레임)
-│   │       ├── warrior_walk_left.png        (8 프레임)
-│   │       ├── warrior_slash1_horizontal.png (6 프레임)
-│   │       ├── warrior_slash2_downslash.png  (6 프레임)
-│   │       ├── warrior_slash3_combo.png      (8 프레임)
-│   │       ├── warrior_pickup.png            (5 프레임)
-│   │       └── warrior_jump.png              (6 프레임)
-│   │
-│   ├── Scripts/
-│   │   ├── WarriorController.cs     ← 캐릭터 물리 & 입력 처리
-│   │   ├── SpriteAnimator.cs        ← 경량 스프라이트 애니메이터
-│   │   ├── WarriorAnimatorSetup.cs  ← Animator ↔ Controller 브릿지
-│   │   └── Editor/
-│   │       └── WarriorSpriteImporter.cs ← 에디터 자동 임포트 툴
-│   │
-│   ├── Animations/
-│   │   └── Warrior/                 ← Animation Clips & Controller (자동 생성)
-│   │
-│   └── Prefabs/
-│       └── Warrior.prefab           ← 완성 프리팹 (자동 생성)
-│
-├── Packages/
-│   └── manifest.json
-└── ProjectSettings/
-    └── ProjectSettings.asset        (프로젝트명: barian_Lin)
-```
+픽셀아트 전사 캐릭터 (금색 사자 갑옷 + 파란 망토 + 대검) 를 위한 Unity 2D 스프라이트 애니메이션 시스템
 
 ---
 
-## 🎮 애니메이션 목록
-
-| 파일명 | 클립 이름 | 프레임 수 | FPS | 루프 |
-|--------|-----------|-----------|-----|------|
-| warrior_walk_right.png | walk_right | 8 | 12 | ✅ |
-| warrior_walk_left.png  | walk_left  | 8 | 12 | ✅ |
-| warrior_slash1_horizontal.png | slash1 | 6 | 14 | ❌ |
-| warrior_slash2_downslash.png  | slash2 | 6 | 14 | ❌ |
-| warrior_slash3_combo.png      | slash3 | 8 | 14 | ❌ |
-| warrior_pickup.png            | pickup | 5 |  8 | ❌ |
-| warrior_jump.png              | jump   | 6 | 10 | ❌ |
-
----
-
-## 🛠️ Unity 프로젝트(barian_Lin)에 적용하는 방법
-
-### 방법 A — 자동 (추천)
-
-1. **스프라이트 복사**
-   ```
-   이 저장소의 Assets/ 폴더를 barian_Lin/Assets/ 에 덮어씁니다
-   ```
-
-2. **Unity Editor 열기**  
-   `barian_Lin` 프로젝트를 Unity Hub에서 엽니다.
-
-3. **에디터 툴 실행**  
-   Unity 메뉴 → `Tools` → `Warrior Sprite Importer` → **`Setup All`**  
-   → 스프라이트 슬라이싱, Animation Clips, Animator Controller, Prefab이 모두 자동으로 생성됩니다.
-
-4. **씬에 배치**  
-   `Assets/Prefabs/Warrior.prefab` 을 Hierarchy에 드래그&드롭합니다.
-
----
-
-### 방법 B — 수동 (단계별)
-
-#### Step 1 : 스프라이트 임포트 설정
-각 `warrior_*.png` 파일을 선택 후 Inspector에서:
-- Texture Type: **Sprite (2D and UI)**
-- Sprite Mode: **Multiple**
-- Filter Mode: **Point (no filter)**  ← 픽셀아트용
-- Compression: **None**
-- Pixels Per Unit: **32** 권장
-
-#### Step 2 : Sprite Editor에서 슬라이스
-- Sprite Editor → Slice → Type: **Grid By Cell Size**
-- Cell Size: **128 x 128** (각 프레임 크기)
-- Apply 클릭
-
-#### Step 3 : Animation Clip 생성
-각 스프라이트 시트별로 슬라이스된 프레임들을 Animation 뷰에 드래그해 클립을 만듭니다.
-
-#### Step 4 : Animator Controller 생성
-1. `Assets/Animations/Warrior/` 폴더에서 Create → Animator Controller
-2. State들을 추가하고 Transition 조건을 아래 표대로 설정합니다.
-
-#### Step 5 : 캐릭터 오브젝트 구성
-1. 빈 GameObject 생성 → 이름: `Warrior`
-2. 컴포넌트 추가:
-   - `Sprite Renderer`
-   - `Rigidbody2D` (Freeze Rotation Z, Gravity Scale: 3)
-   - `BoxCollider2D` (size: 0.6, 1.0 / offset: 0, 0.5)
-   - `Animator` (Controller 연결)
-   - `WarriorController` (스크립트)
-3. 자식 오브젝트 `GroundCheck` 생성 → 위치: (0, -0.05, 0)
-4. `WarriorController.groundCheck` 필드에 GroundCheck 연결
-
----
-
-## 🎯 조작키
+## 🎮 조작키
 
 | 키 | 동작 |
 |----|------|
-| A / ← | 왼쪽 이동 |
-| D / → | 오른쪽 이동 |
-| Space | 점프 |
-| Z | 공격 1 — 가로 참격 |
-| X | 공격 2 — 수직 내려치기 |
-| C | 공격 3 — 콤보 참격 |
-| F / E | 아이템 줍기 |
+| `A` / `←` | 왼쪽 이동 |
+| `D` / `→` | 오른쪽 이동 |
+| `Space` | 점프 |
+| **마우스 좌클릭** | 검 공격 |
 
 ---
 
-## ⚙️ Animator Transitions 설정표
+## 🖼️ 스프라이트 시트
+
+| 파일 | 동작 | 프레임 | FPS |
+|------|------|--------|-----|
+| `warrior_idle.png` | 대기 | 4 | 8 |
+| `warrior_walk_right.png` | 오른쪽 이동 | 8 | 12 |
+| `warrior_walk_left.png` | 왼쪽 이동 | 8 | 12 |
+| `warrior_attack.png` | 검 공격 (예비→참격→이후) | 6 | 14 |
+| `warrior_jump.png` | 점프 | 6 | 10 |
+
+- 프레임 크기: **144 × 192 px** (48×64 픽셀 × 3배 스케일)
+- 배경: 투명 RGBA PNG
+- 스타일: 픽셀아트
+
+---
+
+## ⚡ barian_Lin Unity 프로젝트에 설치하는 법
+
+### 방법 1 — 자동 설치 (추천)
+
+#### Windows
+```
+install_to_unity_windows.bat  더블클릭
+```
+
+#### macOS / Linux
+```bash
+bash install_to_unity_mac.sh
+# 또는
+python3 install_to_unity.py
+```
+
+#### 경로 직접 지정
+```bash
+python3 install_to_unity.py "C:\Users\사용자\My Project\barian_Lin"
+python3 install_to_unity.py "/Users/사용자/Documents/barian_Lin"
+```
+
+---
+
+### 방법 2 — 수동 설치
+
+1. `Assets/` 폴더 내용을 `barian_Lin/Assets/` 에 덮어붙여넣기
+2. Unity Hub에서 `barian_Lin` 프로젝트 열기
+3. 메뉴: **`Tools` → `Warrior Setup` → `▶ Run Full Setup`**  
+   → 스프라이트 슬라이싱, Animation Clips, Animator Controller, Prefab 자동 생성
+4. `Assets/Prefabs/Warrior.prefab` → Hierarchy 씬에 드래그&드롭
+5. ▶ Play!
+
+---
+
+## 📁 파일 구조
 
 ```
-Any State  →→  slash1  (Trigger: Slash1, Can Transition to Self: false)
-Any State  →→  slash2  (Trigger: Slash2)
-Any State  →→  slash3  (Trigger: Slash3)
-Any State  →→  pickup  (Trigger: PickUp)
-Any State  →→  jump    (Trigger: Jump)
-
-idle       →→  walk_right  (State == 1)
-idle       →→  walk_left   (State == 2)
-walk_right →→  idle        (State == 0)
-walk_left  →→  idle        (State == 0)
-jump       →→  idle        (IsGrounded == true, Exit Time)
-slash1     →→  idle        (Exit Time 1.0)
-slash2     →→  idle        (Exit Time 1.0)
-slash3     →→  idle        (Exit Time 1.0)
-pickup     →→  idle        (Exit Time 1.0)
+barian_Lin/
+├── Assets/
+│   ├── Sprites/Warrior/
+│   │   ├── warrior_idle.png
+│   │   ├── warrior_walk_right.png
+│   │   ├── warrior_walk_left.png
+│   │   ├── warrior_attack.png
+│   │   └── warrior_jump.png
+│   │
+│   ├── Scripts/
+│   │   ├── WarriorController.cs        ← 이동·점프·공격 입력
+│   │   ├── WarriorAnimator.cs          ← 스프라이트 프레임 재생기
+│   │   ├── WarriorAnimatorBridge.cs    ← 상태→애니메이션 연결
+│   │   └── Editor/
+│   │       └── WarriorSetup.cs         ← Unity Editor 자동 셋업 툴
+│   │
+│   ├── Animations/Warrior/             ← (자동 생성됨)
+│   └── Prefabs/Warrior.prefab          ← (자동 생성됨)
+│
+├── install_to_unity.py                 ← 자동 설치 (Python)
+├── install_to_unity_windows.bat        ← 자동 설치 (Windows)
+└── install_to_unity_mac.sh             ← 자동 설치 (macOS/Linux)
 ```
 
 ---
 
-## 📦 의존성
+## 🔧 Unity 컴포넌트 구성
 
-| 패키지 | 버전 |
-|--------|------|
-| Unity | 2022.3 LTS 이상 권장 |
-| com.unity.2d.sprite | 1.0.0 |
-| com.unity.2d.animation | 9.1.0 |
-| com.unity.inputsystem | 1.7.0 |
+Warrior GameObject에 다음 컴포넌트들이 자동으로 붙습니다:
+
+| 컴포넌트 | 역할 |
+|---------|------|
+| `SpriteRenderer` | 스프라이트 렌더링 (flipX로 좌우 전환) |
+| `Rigidbody2D` | 물리 (중력 4, 회전 고정) |
+| `BoxCollider2D` | 충돌 (0.55 × 1.1, offset y:0.55) |
+| `Animator` | Unity 내장 애니메이터 |
+| `WarriorController` | 입력 처리 + 히트박스 |
+| `WarriorAnimator` | 경량 스프라이트 프레임 재생 |
 
 ---
 
-## 🎨 스프라이트 사양
+## ⚙️ Inspector 설정 (WarriorController)
 
-- **프레임 크기**: 128 × 128 px
-- **배경**: 투명 (RGBA PNG)
-- **스타일**: 픽셀 아트
-- **캐릭터**: 금색 갑옷 + 파란 망토 전사, 대검 소지
+| 파라미터 | 기본값 | 설명 |
+|---------|--------|------|
+| Move Speed | 5 | 이동 속도 (m/s) |
+| Jump Force | 12 | 점프 힘 |
+| Ground Layer | - | 지면 레이어 (GroundLayer 설정 필수!) |
+| Attack Cooldown | 0.5 | 공격 간격 (초) |
+| Attack Range | 1.2 | 히트박스 반경 (m) |
+
+> ⚠️ **중요**: GroundCheck 오브젝트의 Layer를 설정하고,  
+> `WarriorController.groundLayer` 에 지면 레이어를 할당해야 점프가 작동합니다!
+
+---
+
+## 💻 GitHub
+
+**https://github.com/fireFox-9162/barian_Lin**
