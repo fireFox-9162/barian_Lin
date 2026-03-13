@@ -1,18 +1,15 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// WarriorController – barian_Lin 프로젝트용 전사 캐릭터 컨트롤러
+/// WarriorController  –  barian_Lin 프로젝트 메인 컨트롤러
 /// 
-/// 조작법:
-///   A / ← : 왼쪽 이동
-///   D / → : 오른쪽 이동
-///   Space  : 점프
-///   Z      : 공격 1 (가로 참격)
-///   X      : 공격 2 (내려치기)
-///   C      : 공격 3 (콤보 참격)
-///   F / E  : 아이템 줍기
+///  조작법
+///  ────────────────────────────────────────
+///  A  / ←   : 왼쪽 이동
+///  D  / →   : 오른쪽 이동
+///  Space     : 점프
+///  마우스 좌클릭 : 검 공격
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Animator))]
@@ -21,61 +18,62 @@ public class WarriorController : MonoBehaviour
 {
     // ── Inspector Settings ─────────────────────────────────────────────────
     [Header("Movement")]
-    public float moveSpeed       = 5f;
-    public float jumpForce       = 10f;
+    [Tooltip("이동 속도 (m/s)")]
+    public float moveSpeed = 5f;
+
+    [Tooltip("점프 힘")]
+    public float jumpForce = 12f;
+
+    [Tooltip("지면 레이어")]
     public LayerMask groundLayer;
+
+    [Header("Ground Check")]
+    [Tooltip("발 위치 오브젝트 (없으면 캐릭터 아래 자동 계산)")]
     public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
+    public float groundCheckRadius = 0.15f;
 
     [Header("Attack")]
-    public float attackCooldown  = 0.3f;
-    public float pickupRange     = 1.5f;
+    [Tooltip("공격 1회당 쿨타임 (초)")]
+    public float attackCooldown = 0.5f;
 
-    [Header("Animation FPS")]
-    public float walkFPS         = 12f;
-    public float slashFPS        = 14f;
-    public float jumpFPS         = 10f;
-    public float pickupFPS       = 8f;
+    [Tooltip("공격 히트박스 범위")]
+    public float attackRange  = 1.2f;
+    public Vector2 attackOffset = new Vector2(0.6f, 0f);
 
-    // ── State Machine ──────────────────────────────────────────────────────
-    public enum State
-    {
-        Idle, WalkRight, WalkLeft,
-        Slash1, Slash2, Slash3,
-        PickUp, Jump, Fall, Land
-    }
+    [Header("Attack Hit Effect")]
+    public GameObject hitEffectPrefab;   // (선택) 타격 이펙트 프리팹
 
-    // ── Private Fields ─────────────────────────────────────────────────────
-    private Rigidbody2D     rb;
-    private Animator        anim;
-    private SpriteRenderer  sr;
+    // ── State ──────────────────────────────────────────────────────────────
+    public enum State { Idle, Walk, Jump, Fall, Attack }
+    public State CurrentState { get; private set; } = State.Idle;
 
-    private State     currentState = State.Idle;
-    private bool      isGrounded   = false;
-    private bool      isAttacking  = false;
-    private float     attackTimer  = 0f;
-    private float     horizontal   = 0f;
-    private bool      facingRight  = true;
+    // ── Components ─────────────────────────────────────────────────────────
+    private Rigidbody2D    rb;
+    private Animator       anim;
+    private SpriteRenderer sr;
 
-    // ── Animator Parameter Hashes ──────────────────────────────────────────
-    private static readonly int P_State     = Animator.StringToHash("State");
-    private static readonly int P_IsGround  = Animator.StringToHash("IsGrounded");
-    private static readonly int P_VelY      = Animator.StringToHash("VelocityY");
-    private static readonly int P_Attack1   = Animator.StringToHash("Slash1");
-    private static readonly int P_Attack2   = Animator.StringToHash("Slash2");
-    private static readonly int P_Attack3   = Animator.StringToHash("Slash3");
-    private static readonly int P_PickUp    = Animator.StringToHash("PickUp");
-    private static readonly int P_Jump      = Animator.StringToHash("Jump");
+    // ── Runtime vars ───────────────────────────────────────────────────────
+    private bool  isGrounded     = false;
+    private bool  isAttacking    = false;
+    private float attackTimer    = 0f;
+    private float horizontal     = 0f;
+    private bool  facingRight    = true;
 
-    // ── Events (콤보/사운드 연결용) ────────────────────────────────────────
-    public System.Action OnSlash1;
-    public System.Action OnSlash2;
-    public System.Action OnSlash3;
-    public System.Action OnPickUp;
-    public System.Action OnLand;
+    // ── Animator Hashes ────────────────────────────────────────────────────
+    // These must match the parameter names in the Animator Controller
+    private static readonly int H_State     = Animator.StringToHash("State");
+    private static readonly int H_IsGround  = Animator.StringToHash("IsGrounded");
+    private static readonly int H_VelY      = Animator.StringToHash("VelocityY");
+    private static readonly int H_Attack    = Animator.StringToHash("Attack");
+    private static readonly int H_Jump      = Animator.StringToHash("Jump");
+    private static readonly int H_MoveSpeed = Animator.StringToHash("MoveSpeed");
 
-    // ── Public Properties ──────────────────────────────────────────────────
-    public State CurrentState => currentState;
+    // State integer values (used in Animator)
+    const int S_IDLE   = 0;
+    const int S_WALK   = 1;
+    const int S_JUMP   = 2;
+    const int S_FALL   = 3;
+    const int S_ATTACK = 4;
 
     // ──────────────────────────────────────────────────────────────────────
     void Awake()
@@ -83,188 +81,179 @@ public class WarriorController : MonoBehaviour
         rb   = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         sr   = GetComponent<SpriteRenderer>();
+
+        rb.freezeRotation = true;
     }
 
     void Update()
     {
+        TickAttackCooldown();
         CheckGround();
-        HandleInput();
-        UpdateAnimatorParams();
+        ReadInput();
+        UpdateAnimator();
     }
 
     void FixedUpdate()
     {
+        // Only apply horizontal movement when not attacking
         if (!isAttacking)
-        {
             rb.velocity = new Vector2(horizontal * moveSpeed, rb.velocity.y);
-        }
     }
 
     // ── Ground Check ───────────────────────────────────────────────────────
     void CheckGround()
     {
-        bool wasGrounded = isGrounded;
-        isGrounded = Physics2D.OverlapCircle(
-            groundCheck ? groundCheck.position : transform.position + Vector3.down * 0.5f,
-            groundCheckRadius,
-            groundLayer
-        );
+        Vector2 origin = groundCheck
+            ? (Vector2)groundCheck.position
+            : (Vector2)transform.position + Vector2.down * 0.5f;
 
-        if (!wasGrounded && isGrounded)
-        {
-            OnLand?.Invoke();
-            SetState(State.Land);
-            StartCoroutine(LandRecovery());
-        }
+        isGrounded = Physics2D.OverlapCircle(origin, groundCheckRadius, groundLayer);
     }
 
-    IEnumerator LandRecovery()
+    // ── Input ──────────────────────────────────────────────────────────────
+    void ReadInput()
     {
-        yield return new WaitForSeconds(0.1f);
-        if (currentState == State.Land)
-            SetState(State.Idle);
-    }
-
-    // ── Input Handler ──────────────────────────────────────────────────────
-    void HandleInput()
-    {
-        // Attack cooldown
-        if (attackTimer > 0f)
-        {
-            attackTimer -= Time.deltaTime;
-            if (attackTimer <= 0f) isAttacking = false;
-        }
-
-        if (isAttacking) return;
-
-        // Movement
+        // Horizontal movement (A/D and arrow keys)
         horizontal = Input.GetAxisRaw("Horizontal");
 
-        // ── Jump ──────────────────────────────────────────────────────────
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        // Flip sprite based on direction
+        if (horizontal > 0f  && !facingRight) Flip(true);
+        if (horizontal < 0f  && facingRight)  Flip(false);
+
+        // Jump  (Space)
+        if (Input.GetButtonDown("Jump") && isGrounded && !isAttacking)
+            DoJump();
+
+        // Attack  (Left mouse button)
+        if (Input.GetMouseButtonDown(0) && !isAttacking)
+            DoAttack();
+
+        // Determine state
+        if (!isAttacking)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-            SetState(State.Jump);
-            anim.SetTrigger(P_Jump);
-        }
-
-        // ── Attacks ───────────────────────────────────────────────────────
-        if (Input.GetKeyDown(KeyCode.Z))        TriggerSlash(1);
-        else if (Input.GetKeyDown(KeyCode.X))   TriggerSlash(2);
-        else if (Input.GetKeyDown(KeyCode.C))   TriggerSlash(3);
-
-        // ── Pickup ────────────────────────────────────────────────────────
-        if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.E))
-            TriggerPickUp();
-
-        // ── Walk state update ─────────────────────────────────────────────
-        if (!isAttacking && isGrounded)
-        {
-            if (horizontal > 0f)
-            {
-                facingRight = true;
-                SetState(State.WalkRight);
-                sr.flipX = false;
-            }
-            else if (horizontal < 0f)
-            {
-                facingRight = false;
-                SetState(State.WalkLeft);
-                sr.flipX = true;
-            }
+            if (!isGrounded)
+                SetState(rb.velocity.y >= 0 ? State.Jump : State.Fall);
+            else if (Mathf.Abs(horizontal) > 0.01f)
+                SetState(State.Walk);
             else
-            {
                 SetState(State.Idle);
-            }
         }
     }
 
-    // ── Attack Triggers ────────────────────────────────────────────────────
-    void TriggerSlash(int type)
+    // ── Jump ───────────────────────────────────────────────────────────────
+    void DoJump()
     {
-        isAttacking  = true;
-        attackTimer  = attackCooldown;
-
-        switch (type)
-        {
-            case 1:
-                SetState(State.Slash1);
-                anim.SetTrigger(P_Attack1);
-                OnSlash1?.Invoke();
-                break;
-            case 2:
-                SetState(State.Slash2);
-                anim.SetTrigger(P_Attack2);
-                OnSlash2?.Invoke();
-                break;
-            case 3:
-                SetState(State.Slash3);
-                anim.SetTrigger(P_Attack3);
-                OnSlash3?.Invoke();
-                StartCoroutine(ResetAttackAfter(0.6f));
-                return;
-        }
-        StartCoroutine(ResetAttackAfter(attackCooldown));
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        SetState(State.Jump);
+        anim.SetTrigger(H_Jump);
     }
 
-    void TriggerPickUp()
+    // ── Attack ─────────────────────────────────────────────────────────────
+    void DoAttack()
     {
         isAttacking = true;
-        SetState(State.PickUp);
-        anim.SetTrigger(P_PickUp);
-        OnPickUp?.Invoke();
-        StartCoroutine(PickUpAction());
-        StartCoroutine(ResetAttackAfter(0.6f));
+        attackTimer = attackCooldown;
+
+        SetState(State.Attack);
+        anim.SetTrigger(H_Attack);
+
+        // 실제 히트 판정 (약간의 딜레이 후 실행 – 검이 앞으로 나오는 타이밍)
+        StartCoroutine(HitRoutine());
     }
 
-    IEnumerator PickUpAction()
+    IEnumerator HitRoutine()
     {
-        yield return new WaitForSeconds(0.3f);
-        // Detect nearby items
-        Collider2D[] cols = Physics2D.OverlapCircleAll(transform.position, pickupRange);
-        foreach (var col in cols)
-        {
-            IPickable item = col.GetComponent<IPickable>();
-            item?.OnPickedUp(gameObject);
-        }
-    }
+        // 공격 애니메이션의 "임팩트 프레임" 타이밍 (0.15초 후)
+        yield return new WaitForSeconds(0.15f);
+        PerformHit();
 
-    IEnumerator ResetAttackAfter(float delay)
-    {
-        yield return new WaitForSeconds(delay);
+        // 공격 끝나면 상태 초기화
+        yield return new WaitForSeconds(attackCooldown - 0.15f);
         isAttacking = false;
-        attackTimer = 0f;
         SetState(State.Idle);
     }
 
-    // ── Animator ───────────────────────────────────────────────────────────
-    void UpdateAnimatorParams()
+    void PerformHit()
     {
-        anim.SetInteger(P_State,    (int)currentState);
-        anim.SetBool(P_IsGround,    isGrounded);
-        anim.SetFloat(P_VelY,       rb.velocity.y);
+        // 히트박스 중심 (캐릭터가 보는 방향으로 오프셋)
+        Vector2 hitCenter = (Vector2)transform.position
+            + new Vector2(attackOffset.x * (facingRight ? 1f : -1f), attackOffset.y);
+
+        // 범위 안의 적 탐지
+        Collider2D[] hits = Physics2D.OverlapCircleAll(hitCenter, attackRange);
+        foreach (var hit in hits)
+        {
+            if (hit.gameObject == gameObject) continue;
+
+            // IDamageable 인터페이스 지원 오브젝트에 데미지 전달
+            IDamageable dmg = hit.GetComponent<IDamageable>();
+            dmg?.TakeDamage(1, hitCenter);
+
+            // 타격 이펙트
+            if (hitEffectPrefab)
+                Instantiate(hitEffectPrefab, hit.ClosestPoint(hitCenter), Quaternion.identity);
+        }
     }
 
-    void SetState(State newState)
+    // ── Cooldown tick ─────────────────────────────────────────────────────
+    void TickAttackCooldown()
     {
-        if (currentState == newState) return;
-        currentState = newState;
+        if (attackTimer > 0f)
+            attackTimer -= Time.deltaTime;
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    void Flip(bool toRight)
+    {
+        facingRight = toRight;
+        sr.flipX    = !toRight;   // flipX: false=right, true=left
+    }
+
+    void SetState(State s)
+    {
+        if (CurrentState == s) return;
+        CurrentState = s;
+    }
+
+    // ── Animator sync ─────────────────────────────────────────────────────
+    void UpdateAnimator()
+    {
+        int si = CurrentState switch
+        {
+            State.Idle   => S_IDLE,
+            State.Walk   => S_WALK,
+            State.Jump   => S_JUMP,
+            State.Fall   => S_FALL,
+            State.Attack => S_ATTACK,
+            _            => S_IDLE,
+        };
+
+        anim.SetInteger(H_State,    si);
+        anim.SetBool(H_IsGround,    isGrounded);
+        anim.SetFloat(H_VelY,       rb.velocity.y);
+        anim.SetFloat(H_MoveSpeed,  Mathf.Abs(horizontal));
     }
 
     // ── Gizmos ─────────────────────────────────────────────────────────────
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.green;
-        Vector3 pos = groundCheck ? groundCheck.position : transform.position + Vector3.down * 0.5f;
-        Gizmos.DrawWireSphere(pos, groundCheckRadius);
+        // Ground check
+        Vector3 gc = groundCheck
+            ? groundCheck.position
+            : transform.position + Vector3.down * 0.5f;
+        Gizmos.color = isGrounded ? Color.green : Color.red;
+        Gizmos.DrawWireSphere(gc, groundCheckRadius);
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, pickupRange);
+        // Attack range
+        Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.5f);
+        Vector3 hitC = transform.position +
+            new Vector3(attackOffset.x * (facingRight ? 1f : -1f), attackOffset.y, 0f);
+        Gizmos.DrawWireSphere(hitC, attackRange);
     }
 }
 
-// ── Item Interface ─────────────────────────────────────────────────────────
-public interface IPickable
+// ── Damageable interface ──────────────────────────────────────────────────
+public interface IDamageable
 {
-    void OnPickedUp(GameObject picker);
+    void TakeDamage(int amount, Vector2 hitPoint);
 }
